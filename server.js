@@ -12,10 +12,10 @@ app.post('/api/generate-report', (req, res) => {
     if (!transcription) {
         return res.status(400).json({ error: 'No transcription provided' });
     }
-    
+
     const findings = `LIVER: Unremarkable.\n\nGALLBLADDER: Unremarkable.\n\nPANCREAS: Unremarkable.\n\nLOWER CHEST: Lungs and heart unremarkable.`;
     const impression = `1. Acute appendicitis without perforation or abscess.\n\n2. A hepatic cyst measuring 2 cm, likely benign.\n\n3. Mild bibasilar atelectasis, likely atelectasis versus scarring.`;
-    
+
     res.json({ findings, impression });
 });
 
