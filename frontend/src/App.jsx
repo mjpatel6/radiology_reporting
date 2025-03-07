@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Mic, Clipboard, RefreshCcw } from "lucide-react";
 
 const modalities = ["CT", "MRI", "Ultrasound", "X-ray"];
-const bodyParts = ["Chest", "Brain", "Abdomen/Pelvis", "Spine", "Neck", "Extremity"];
+const bodyParts = ["Chest", "Brain", "Abdomen/Pelvis", "Spine", "Neck", "Extremity", "Wrist", "Elbow", "Knee", "Ankle"];
 
 const App = () => {
   const [transcription, setTranscription] = useState("");
@@ -48,7 +48,7 @@ const App = () => {
       
       const data = await response.json();
       if (response.ok) {
-        setFindings(data.findings);
+        setFindings(data.findings.replace(/\n/g, "\n\n"));
         setImpression(data.impression);
       } else {
         setFindings("Error generating report. Please try again.");
@@ -64,51 +64,51 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-8">
-      <Card className="w-full max-w-2xl shadow-xl p-6 bg-white rounded-lg border">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-4 text-center">🩻 Radiology Report Generator</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 p-10 text-white">
+      <Card className="w-full max-w-3xl shadow-lg p-8 bg-gray-800 rounded-xl border border-gray-600">
+        <h1 className="text-3xl font-bold text-gray-100 mb-6 text-center">🩻 Radiology Report Generator</h1>
 
         <div className="flex gap-4 mb-4">
-          <select className="border p-2 rounded" value={modality} onChange={(e) => setModality(e.target.value)}>
+          <select className="border p-3 rounded bg-gray-700 text-white" value={modality} onChange={(e) => setModality(e.target.value)}>
             {modalities.map((mod) => <option key={mod} value={mod}>{mod}</option>)}
           </select>
-          <select className="border p-2 rounded" value={bodyPart} onChange={(e) => setBodyPart(e.target.value)}>
+          <select className="border p-3 rounded bg-gray-700 text-white" value={bodyPart} onChange={(e) => setBodyPart(e.target.value)}>
             {bodyParts.map((part) => <option key={part} value={part}>{part}</option>)}
           </select>
         </div>
 
         <textarea
-          className="w-full p-3 border rounded-md text-gray-900 shadow-sm"
+          className="w-full p-4 border rounded-lg text-gray-900 bg-gray-100 shadow-md focus:ring-2 focus:ring-blue-400"
           rows="3"
           value={transcription}
           onChange={(e) => setTranscription(e.target.value)}
           placeholder="Start dictating or type findings..."
         />
 
-        <div className="flex gap-3 mt-4 justify-center">
-          <Button onClick={handleGenerateReport} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <div className="flex gap-3 mt-6 justify-center">
+          <Button onClick={handleGenerateReport} disabled={loading} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold">
             {loading ? "Generating..." : "Generate Report"}
           </Button>
-          <Button onClick={() => { setTranscription(""); resetTranscript(); }} className="bg-gray-500 hover:bg-gray-600 text-white">
+          <Button onClick={() => { setTranscription(""); resetTranscript(); }} className="bg-gray-600 hover:bg-gray-700 text-white">
             <RefreshCcw />
           </Button>
-          <Button onClick={toggleListening} className={listening ? "bg-red-600" : "bg-green-600"}>
+          <Button onClick={toggleListening} className={listening ? "bg-red-500" : "bg-green-500"}>
             <Mic /> {listening ? "Stop Dictation" : "Start Dictation"}
           </Button>
         </div>
 
         {findings && (
-          <CardContent className="bg-gray-50 border rounded-lg p-5 mt-4">
-            <h2 className="text-xl font-semibold text-gray-700 mb-3">Generated Report</h2>
+          <CardContent className="bg-gray-700 border rounded-lg p-6 mt-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Generated Report</h2>
             <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-600">Findings:</h3>
-              <textarea className="w-full p-3 border rounded-md" rows="4" value={findings} readOnly />
+              <h3 className="text-lg font-medium text-gray-300">Findings:</h3>
+              <textarea className="w-full p-4 border rounded-md bg-gray-600 text-white shadow-sm" rows="6" value={findings} readOnly />
             </div>
             <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-600">Impression:</h3>
-              <textarea className="w-full p-3 border rounded-md" rows="3" value={impression} readOnly />
+              <h3 className="text-lg font-medium text-gray-300">Impression:</h3>
+              <textarea className="w-full p-4 border rounded-md bg-gray-600 text-white shadow-sm" rows="3" value={impression} readOnly />
             </div>
-            <Button onClick={() => navigator.clipboard.writeText(`FINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`)} className="bg-gray-600 hover:bg-gray-700 text-white w-full">
+            <Button onClick={() => navigator.clipboard.writeText(`FINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`)} className="bg-blue-500 hover:bg-blue-600 text-white w-full">
               <Clipboard /> Copy Report
             </Button>
           </CardContent>
