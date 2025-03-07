@@ -14,6 +14,7 @@ const App = () => {
   const [modality, setModality] = useState("CT");
   const [bodyPart, setBodyPart] = useState("Chest");
   const [listening, setListening] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { transcript, resetTranscript, browserSupportsSpeechRecognition, listening: speechListening, startListening, stopListening } = useSpeechRecognition();
 
   useEffect(() => {
@@ -39,23 +40,29 @@ const App = () => {
     }
   };
 
-  const processSpeech = (spokenText) => {
-    const words = spokenText.toLowerCase().split(" ");
-    if (words.includes("ct")) setModality("CT");
-    if (words.includes("mri")) setModality("MRI");
-    if (words.includes("ultrasound") || words.includes("us")) setModality("Ultrasound");
-    if (words.includes("x-ray") || words.includes("xr")) setModality("X-ray");
-
-    if (words.includes("chest")) setBodyPart("Chest");
-    if (words.includes("brain") || words.includes("head")) setBodyPart("Brain");
-    if (words.includes("abdomen") || words.includes("pelvis")) setBodyPart("Abdomen/Pelvis");
-    if (words.includes("spine")) setBodyPart("Spine");
-    if (words.includes("neck")) setBodyPart("Neck");
-    if (words.includes("extremity")) setBodyPart("Extremity");
-
-    const punctuationMap = { period: ".", comma: ",", newline: "\n" };
-    const processedText = words.map((word) => punctuationMap[word] || word).join(" ");
-    setTranscription(processedText);
+  const handleGenerateReport = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("https://radiologybot-71ad51a754d0.herokuapp.com/api/generate-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcription, modality, bodyPart }),
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        setFindings(data.findings);
+        setImpression(data.impression);
+      } else {
+        setFindings("Error generating report. Please try again.");
+        setImpression("");
+      }
+    } catch (error) {
+      setFindings("Error connecting to server. Please check your connection.");
+      setImpression("");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,6 +88,9 @@ const App = () => {
         />
 
         <div className="flex gap-4 mt-6 justify-center">
+          <Button onClick={handleGenerateReport} disabled={loading} className={`${loading ? "bg-gray-500" : "bg-blue-600 hover:bg-blue-700"} text-white font-semibold flex items-center gap-2`}>
+            {loading ? "Generating..." : "Generate Report"}
+          </Button>
           <Button onClick={toggleListening} className={`${listening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} text-white font-semibold flex items-center gap-2`}>
             <Mic /> {listening ? "Stop Dictation" : "Start Dictation"}
           </Button>
