@@ -1,9 +1,32 @@
-"dependencies": {
-  "cors": "^2.8.5",
-  "dotenv": "^16.4.7",
-  "express": "^4.21.2",
-  "helmet": "^8.0.0",
-  "morgan": "^1.10.0",
-  "node-fetch": "^2.7.0",
-  "path": "^0.12.7"
-},
+{
+  "name": "radiology_reporting",
+  "version": "1.0.0",
+  "description": "Radiology Reporting API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "node-fetch": "^2.7.0",
+    "path": "^0.12.7"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mjpatel6/radiology_reporting.git"
+  },
+  "keywords": [
+    "radiology",
+    "api",
+    "heroku"
+  ],
+  "author": "Manish Patel",
+  "license": "ISC"
+}
