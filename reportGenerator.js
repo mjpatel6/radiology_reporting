@@ -14,7 +14,13 @@ const App = () => {
   const [modality, setModality] = useState("CT");
   const [bodyPart, setBodyPart] = useState("Chest");
   const [listening, setListening] = useState(false);
-  const { transcript, resetTranscript, startListening, stopListening } = useSpeechRecognition();
+  const { transcript, resetTranscript, browserSupportsSpeechRecognition, listening: speechListening, startListening, stopListening } = useSpeechRecognition();
+
+  useEffect(() => {
+    if (!browserSupportsSpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+    }
+  }, [browserSupportsSpeechRecognition]);
 
   useEffect(() => {
     if (listening) {
@@ -22,6 +28,16 @@ const App = () => {
       processSpeech(transcript);
     }
   }, [transcript, listening]);
+
+  const toggleListening = () => {
+    if (speechListening) {
+      stopListening();
+      setListening(false);
+    } else {
+      startListening();
+      setListening(true);
+    }
+  };
 
   const processSpeech = (spokenText) => {
     const words = spokenText.toLowerCase().split(" ");
@@ -42,33 +58,16 @@ const App = () => {
     setTranscription(processedText);
   };
 
-  const handleGenerateReport = async () => {
-    const response = await fetch("https://radiologybot-71ad51a754d0.herokuapp.com/api/generate-report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ transcription, modality, bodyPart }),
-    });
-    
-    const data = await response.json();
-    if (response.ok) {
-      setFindings(data.findings);
-      setImpression(data.impression);
-    } else {
-      setFindings("Error generating report. Please try again.");
-      setImpression("");
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-8">
-      <Card className="w-full max-w-3xl shadow-2xl p-8 bg-white rounded-xl border">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200 p-10">
+      <Card className="w-full max-w-4xl shadow-lg p-8 bg-white rounded-xl border border-gray-300">
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">🩻 Radiology Report Generator</h1>
 
-        <div className="flex gap-4 mb-4">
-          <select className="border p-3 rounded-lg text-gray-700 bg-white" value={modality} onChange={(e) => setModality(e.target.value)}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <select className="border p-3 rounded-lg text-gray-700 bg-white w-full" value={modality} onChange={(e) => setModality(e.target.value)}>
             {modalities.map((mod) => <option key={mod} value={mod}>{mod}</option>)}
           </select>
-          <select className="border p-3 rounded-lg text-gray-700 bg-white" value={bodyPart} onChange={(e) => setBodyPart(e.target.value)}>
+          <select className="border p-3 rounded-lg text-gray-700 bg-white w-full" value={bodyPart} onChange={(e) => setBodyPart(e.target.value)}>
             {bodyParts.map((part) => <option key={part} value={part}>{part}</option>)}
           </select>
         </div>
@@ -81,18 +80,11 @@ const App = () => {
           placeholder="Start dictating or type findings..."
         />
 
-        <div className="flex gap-3 mt-6 justify-center">
-          <Button onClick={handleGenerateReport} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">Generate Report</Button>
+        <div className="flex gap-4 mt-6 justify-center">
+          <Button onClick={toggleListening} className={`${listening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} text-white font-semibold flex items-center gap-2`}>
+            <Mic /> {listening ? "Stop Dictation" : "Start Dictation"}
+          </Button>
           <Button onClick={() => { setTranscription(""); resetTranscript(); }} className="bg-gray-500 hover:bg-gray-600 text-white"><RefreshCcw /></Button>
-          <Button onClick={() => {
-            if (listening) {
-              stopListening();
-              setListening(false);
-            } else {
-              startListening();
-              setListening(true);
-            }
-          }} className={listening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}><Mic /></Button>
         </div>
 
         {findings && (
