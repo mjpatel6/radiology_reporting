@@ -5,41 +5,65 @@ function generateReport(transcription, modality, bodyPart) {
 
   const inputText = transcription.toLowerCase();
 
-  // Findings templates based on modality and body part
-  const findingsTemplates = {
-    CT: {
-      Chest: "CT of the chest shows no acute abnormalities.",
-      Brain: "CT of the brain shows no evidence of infarct or hemorrhage.",
-      AbdomenPelvis: "CT abdomen and pelvis is unremarkable.",
-      Spine: "CT of the spine shows no fractures or significant degenerative changes.",
-    },
-    MRI: {
-      Chest: "MRI of the chest shows no mass or lymphadenopathy.",
-      Brain: "MRI of the brain is unremarkable for acute pathology.",
-      AbdomenPelvis: "MRI of the abdomen and pelvis shows no significant lesions.",
-      Spine: "MRI of the spine reveals no spinal cord compression or disc herniation.",
-    },
-    Ultrasound: {
-      Chest: "Ultrasound of the chest shows no pleural effusion.",
-      AbdomenPelvis: "Ultrasound of the abdomen is unremarkable.",
-    },
-    Xray: {
-      Chest: "Chest X-ray shows clear lungs and no signs of pneumonia.",
-      Spine: "X-ray of the spine shows no fractures or abnormal alignment.",
-    },
-  };
+  // Detailed organ-system-based report structure
+  let findings = "";
+  let impression = "";
 
-  // Default finding based on selection
-  const findings = findingsTemplates[modality]?.[bodyPart] || "No significant findings noted.";
+  if (modality === "CT" && bodyPart === "Chest") {
+    findings += "**Lungs:** No focal consolidation, effusion, or pneumothorax. Mild bibasilar atelectasis noted.\n";
+    findings += "**Mediastinum:** No significant lymphadenopathy. Normal cardiac silhouette.\n";
+    findings += "**Pleura:** No pleural thickening or calcifications.\n";
+    findings += "**Bones:** No acute fractures or lytic lesions.\n";
+    
+    impression = "No acute cardiopulmonary abnormality. Mild atelectasis may be related to shallow breathing.";
+  }
 
-  // Impression based on keyword detection
-  let impression = "No acute findings.";
+  if (modality === "MRI" && bodyPart === "Brain") {
+    findings += "**Gray and White Matter:** No acute infarct, hemorrhage, or demyelination.\n";
+    findings += "**Ventricular System:** Normal ventricular size and midline structures.\n";
+    findings += "**Cerebellum:** No cerebellar lesions or mass effect.\n";
+    findings += "**Sinuses:** Paranasal sinuses and mastoid air cells are clear.\n";
+    
+    impression = "Unremarkable MRI of the brain. No acute intracranial abnormality.";
+  }
+
+  if (modality === "Ultrasound" && bodyPart === "Abdomen/Pelvis") {
+    findings += "**Liver:** Normal echotexture, no focal lesions.\n";
+    findings += "**Gallbladder:** No gallstones or wall thickening.\n";
+    findings += "**Kidneys:** No hydronephrosis or calculi.\n";
+    findings += "**Bladder:** Well distended with no intraluminal masses.\n";
+    
+    impression = "Normal ultrasound of the abdomen and pelvis.";
+  }
+
+  if (modality === "X-ray" && bodyPart === "Spine") {
+    findings += "**Alignment:** Normal vertebral alignment.\n";
+    findings += "**Bones:** No fractures, lytic or blastic lesions.\n";
+    findings += "**Intervertebral Discs:** No significant narrowing.\n";
+    
+    impression = "No acute osseous abnormality of the spine.";
+  }
+
+  // Modify report based on additional keyword findings
   if (inputText.includes("nodule")) {
-    impression = "Pulmonary nodule present. Follow-up as clinically indicated.";
-  } else if (inputText.includes("fracture")) {
-    impression = "Vertebral fracture identified. Further evaluation recommended.";
-  } else if (inputText.includes("mass")) {
-    impression = "Soft tissue mass detected. Correlation with further imaging is suggested.";
+    findings += "**Nodule:** A pulmonary nodule is present in the right upper lobe.\n";
+    impression = "Consider follow-up CT in 6 months for pulmonary nodule surveillance.";
+  }
+  if (inputText.includes("mass")) {
+    findings += "**Mass:** A suspicious soft tissue mass is noted.\n";
+    impression = "Further imaging with contrast-enhanced MRI is recommended.";
+  }
+  if (inputText.includes("fracture")) {
+    findings += "**Fracture:** Acute fracture identified at T12 vertebral body.\n";
+    impression = "Recommend orthopedic evaluation and further CT imaging.";
+  }
+  if (inputText.includes("effusion")) {
+    findings += "**Pleural Effusion:** Small pleural effusion noted on the left side.\n";
+    impression = "Recommend clinical correlation and follow-up imaging if necessary.";
+  }
+  if (inputText.includes("atelectasis")) {
+    findings += "**Atelectasis:** Mild bibasilar atelectasis seen.\n";
+    impression = "Possible secondary to shallow breathing or underlying lung pathology.";
   }
 
   return { findings, impression };
