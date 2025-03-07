@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useSpeechRecognition } from "react-speech-recognition";
+import React, { useState, useEffect } from "react";
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mic, Clipboard, RefreshCcw } from "lucide-react";
@@ -13,37 +13,53 @@ const App = () => {
   const [impression, setImpression] = useState("");
   const [modality, setModality] = useState("CT");
   const [bodyPart, setBodyPart] = useState("Chest");
-  const { transcript, resetTranscript, listening, startListening, stopListening } = useSpeechRecognition();
+  const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
+  const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
 
-  const processSpeech = (spokenText) => {
-    const words = spokenText.toLowerCase().split(" ");
-    if (words.includes("ct")) setModality("CT");
-    if (words.includes("mri")) setModality("MRI");
-    if (words.includes("ultrasound") || words.includes("us")) setModality("Ultrasound");
-    if (words.includes("x-ray") || words.includes("xr")) setModality("X-ray");
+  useEffect(() => {
+    if (listening) {
+      setTranscription(transcript);
+    }
+  }, [transcript, listening]);
 
-    if (words.includes("chest")) setBodyPart("Chest");
-    if (words.includes("brain") || words.includes("head")) setBodyPart("Brain");
-    if (words.includes("abdomen") || words.includes("pelvis")) setBodyPart("Abdomen/Pelvis");
-    if (words.includes("spine")) setBodyPart("Spine");
-    if (words.includes("neck")) setBodyPart("Neck");
-    if (words.includes("extremity")) setBodyPart("Extremity");
+  const toggleListening = () => {
+    if (!browserSupportsSpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    if (listening) {
+      SpeechRecognition.stopListening();
+      setListening(false);
+    } else {
+      SpeechRecognition.startListening({ continuous: true });
+      setListening(true);
+    }
   };
 
   const handleGenerateReport = async () => {
-    const response = await fetch("https://radiologybot-71ad51a754d0.herokuapp.com/api/generate-report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ transcription, modality, bodyPart }),
-    });
-    
-    const data = await response.json();
-    if (response.ok) {
-      setFindings(data.findings);
-      setImpression(data.impression);
-    } else {
-      setFindings("Error generating report. Please try again.");
+    setLoading(true);
+    try {
+      const response = await fetch("https://radiologybot-71ad51a754d0.herokuapp.com/api/generate-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcription, modality, bodyPart }),
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        setFindings(data.findings);
+        setImpression(data.impression);
+      } else {
+        setFindings("Error generating report. Please try again.");
+        setImpression("");
+      }
+    } catch (error) {
+      console.error("Error during API call:", error);
+      setFindings("Error connecting to server. Please check your connection.");
       setImpression("");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,9 +86,15 @@ const App = () => {
         />
 
         <div className="flex gap-3 mt-4 justify-center">
-          <Button onClick={handleGenerateReport} className="bg-blue-600 hover:bg-blue-700 text-white">Generate Report</Button>
-          <Button onClick={() => { setTranscription(""); resetTranscript(); }} className="bg-gray-500 hover:bg-gray-600 text-white"><RefreshCcw /></Button>
-          <Button onClick={() => { listening ? stopListening() : startListening(); processSpeech(transcript); }} className={listening ? "bg-red-600" : "bg-green-600"}><Mic /></Button>
+          <Button onClick={handleGenerateReport} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
+            {loading ? "Generating..." : "Generate Report"}
+          </Button>
+          <Button onClick={() => { setTranscription(""); resetTranscript(); }} className="bg-gray-500 hover:bg-gray-600 text-white">
+            <RefreshCcw />
+          </Button>
+          <Button onClick={toggleListening} className={listening ? "bg-red-600" : "bg-green-600"}>
+            <Mic /> {listening ? "Stop Dictation" : "Start Dictation"}
+          </Button>
         </div>
 
         {findings && (
@@ -86,7 +108,9 @@ const App = () => {
               <h3 className="text-lg font-medium text-gray-600">Impression:</h3>
               <textarea className="w-full p-3 border rounded-md" rows="3" value={impression} readOnly />
             </div>
-            <Button onClick={() => navigator.clipboard.writeText(`FINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`)} className="bg-gray-600 hover:bg-gray-700 text-white w-full"><Clipboard /> Copy Report</Button>
+            <Button onClick={() => navigator.clipboard.writeText(`FINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`)} className="bg-gray-600 hover:bg-gray-700 text-white w-full">
+              <Clipboard /> Copy Report
+            </Button>
           </CardContent>
         )}
       </Card>
