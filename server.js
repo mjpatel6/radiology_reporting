@@ -11,8 +11,9 @@ const PORT = process.env.PORT || 3000;
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: "*", // Allow requests from any origin (update to your frontend URL if needed)
-  credentials: true,
+  origin: "http://localhost:5173", // Allow requests from your frontend
+  methods: ["GET", "POST"], // Allow only specific HTTP methods
+  credentials: true, // Allow cookies and credentials
 }));
 
 app.use(express.json());
