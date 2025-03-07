@@ -7,44 +7,20 @@ const { generateReport } = require("./reportGenerator");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const corsOptions = {
-  origin: "http://localhost:5173", // Allow frontend requests
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-};
 
-<<<<<<< HEAD
-=======
-// ✅ Allow CORS requests from any frontend (modify origin if needed)
-const corsOptions = {
-  origin: "*",  // Change this to specific frontend URL if needed (e.g., "http://localhost:5173")
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  allowedHeaders: ["Content-Type"],
-};
-
->>>>>>> heroku/main
-app.use(cors(corsOptions));
-app.use(express.json({ limit: "1mb" }));
+app.use(cors());
+app.use(express.json());
 app.use(helmet());
-app.use(morgan("dev"));
+app.use(morgan("tiny"));
 
-<<<<<<< HEAD
-=======
-const PORT = process.env.PORT || 3000;
-
->>>>>>> heroku/main
 app.post("/api/generate-report", async (req, res) => {
   try {
     const { transcription, modality, bodyPart } = req.body;
-    if (!transcription || !modality || !bodyPart) {
-      return res.status(400).json({ error: "Missing required fields." });
-    }
-
-    const { findings, impression } = await generateReport(transcription, modality, bodyPart);
-    res.json({ findings, impression });
+    const result = await generateReport(transcription, modality, bodyPart);
+    res.json(result);
   } catch (error) {
     console.error("Error generating report:", error);
-    res.status(500).json({ error: "Internal Server Error." });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
