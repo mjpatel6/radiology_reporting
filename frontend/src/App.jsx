@@ -40,7 +40,11 @@ const App = () => {
   const handleGenerateReport = async () => {
     setLoading(true);
     try {
+<<<<<<< HEAD
       const response = await fetch("http://localhost:3000/api/generate-report", {
+=======
+      const response = await fetch("https://radiologybot-71ad51a754d0.herokuapp.com/api/generate-report", {
+>>>>>>> heroku/main
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcription, modality, bodyPart }),
