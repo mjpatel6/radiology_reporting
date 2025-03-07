@@ -6,11 +6,11 @@ const { generateReport } = require("./reportGenerator");
 
 const app = express();
 
-// ✅ Allow CORS requests from your Vite frontend
+// ✅ Allow CORS requests from any frontend (modify origin if needed)
 const corsOptions = {
-  origin: "http://localhost:5173", // Allow requests from your frontend
+  origin: "*",  // Change this to specific frontend URL if needed (e.g., "http://localhost:5173")
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
+  allowedHeaders: ["Content-Type"],
 };
 
 app.use(cors(corsOptions));
