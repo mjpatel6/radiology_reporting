@@ -24,11 +24,10 @@ const App = () => {
   }, [browserSupportsSpeechRecognition]);
 
   useEffect(() => {
-    if (listening) {
+    if (speechListening) {
       setTranscription(transcript);
-      processSpeech(transcript);
     }
-  }, [transcript, listening]);
+  }, [transcript, speechListening]);
 
   const toggleListening = () => {
     if (speechListening) {
@@ -42,6 +41,7 @@ const App = () => {
 
   const handleGenerateReport = async () => {
     setLoading(true);
+    console.log("Sending request to API...");
     try {
       const response = await fetch("https://radiologybot-71ad51a754d0.herokuapp.com/api/generate-report", {
         method: "POST",
@@ -50,6 +50,8 @@ const App = () => {
       });
       
       const data = await response.json();
+      console.log("Response received:", data);
+      
       if (response.ok) {
         setFindings(data.findings);
         setImpression(data.impression);
@@ -58,6 +60,7 @@ const App = () => {
         setImpression("");
       }
     } catch (error) {
+      console.error("Error during API call:", error);
       setFindings("Error connecting to server. Please check your connection.");
       setImpression("");
     } finally {
