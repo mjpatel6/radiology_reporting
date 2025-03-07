@@ -29,12 +29,14 @@ async function generateReport(transcription, modality, bodyPart) {
   const messages = [
     {
       role: "system",
-      content: "You are a radiologist assistant. Respond with a comprehensive, structured report that includes all relevant organ systems and findings appropriate to the specified imaging modality and body part."
+      content: `You are a radiologist assistant. Generate a structured radiology report for a ${modality} scan of the ${bodyPart}. Include findings for the following organ systems: ${systemsToInclude}. For systems not mentioned, state that they are normal.`,
     },
     {
       role: "user",
-      content: `You are a radiologist. Based on the dictated findings: "${transcription}", generate a detailed radiology report for a ${modality} scan of the ${bodyPart}. Include findings for the following organ systems: ${systemsToInclude}. Ensure that the report is structured, accurate, and complete.`
-    }
+      content: `Dictated findings: "${transcription}". Generate a detailed report with the following sections:
+1. **Findings**: Describe all abnormal and normal findings.
+2. **Impression**: Summarize the key findings and their clinical significance.`,
+    },
   ];
 
   try {
@@ -45,7 +47,7 @@ async function generateReport(transcription, modality, bodyPart) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-3.5-turbo", // or "gpt-4" if available
         messages: messages,
         max_tokens: 1000,
       }),
@@ -54,22 +56,27 @@ async function generateReport(transcription, modality, bodyPart) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenAI API Error:", errorText);
-      return { findings: "AI processing failed.", impression: "" };
+      return { findings: "AI processing failed. Please try again.", impression: "" };
     }
 
     const data = await response.json();
     const reply = data.choices[0].message.content.trim();
 
-    // Attempt to split findings and impression if they are separated in the response
-    const [findingsSection, impressionSection] = reply.split("**Impression:**");
+    // Split findings and impression
+    const findingsSection = reply.includes("**Findings:**")
+      ? reply.split("**Findings:**")[1].split("**Impression:**")[0].trim()
+      : reply;
+    const impressionSection = reply.includes("**Impression:**")
+      ? reply.split("**Impression:**")[1].trim()
+      : "";
 
     return {
-      findings: findingsSection ? findingsSection.trim() : reply,
-      impression: impressionSection ? impressionSection.trim() : "",
+      findings: findingsSection,
+      impression: impressionSection,
     };
   } catch (error) {
     console.error("Error generating report:", error);
-    return { findings: "Error generating report.", impression: "" };
+    return { findings: "Error generating report. Please check your connection.", impression: "" };
   }
 }
 
