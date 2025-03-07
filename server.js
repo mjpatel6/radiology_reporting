@@ -1,4 +1,5 @@
 require("dotenv").config();
+console.log("API Key:", process.env.OPENAI_API_KEY);
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
