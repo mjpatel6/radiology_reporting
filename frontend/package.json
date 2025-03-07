@@ -19,6 +19,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-speech-recognition": "^3.10.0",
+    "react-spinners": "^0.15.0",
     "regenerator-runtime": "^0.14.1",
     "shadcn": "^2.4.0-canary.12",
     "speech-to-text-api": "^1.0.3",
