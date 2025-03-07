@@ -3,6 +3,7 @@ import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognitio
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mic, Clipboard, RefreshCcw } from "lucide-react";
+import { ClipLoader } from "react-spinners";
 
 const modalities = ["CT", "MRI", "Ultrasound", "X-ray"];
 const bodyParts = ["Chest", "Brain", "Abdomen/Pelvis", "Spine", "Neck", "Extremity", "Wrist", "Elbow", "Knee", "Ankle"];
@@ -40,23 +41,22 @@ const App = () => {
   const handleGenerateReport = async () => {
     setLoading(true);
     try {
-      const response = await fetch("https://radiologybot-71ad51a754d0.herokuapp.com/api/generate-report", {
+      const response = await fetch("/api/generate-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcription, modality, bodyPart }),
       });
-      
-      const data = await response.json();
-      if (response.ok) {
-        setFindings(data.findings.replace(/\n/g, "\n\n"));
-        setImpression(data.impression);
-      } else {
-        setFindings("Error generating report. Please try again.");
-        setImpression("");
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
       }
+
+      const data = await response.json();
+      setFindings(data.findings.replace(/\n/g, "\n\n"));
+      setImpression(data.impression);
     } catch (error) {
       console.error("Error during API call:", error);
-      setFindings("Error connecting to server. Please check your connection.");
+      setFindings(`Error: ${error.message}`);
       setImpression("");
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ const App = () => {
 
         <div className="flex gap-3 mt-6 justify-center">
           <Button onClick={handleGenerateReport} disabled={loading} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold">
-            {loading ? "Generating..." : "Generate Report"}
+            {loading ? <ClipLoader size={20} color="#ffffff" /> : "Generate Report"}
           </Button>
           <Button onClick={() => { setTranscription(""); resetTranscript(); }} className="bg-gray-600 hover:bg-gray-700 text-white">
             <RefreshCcw />
