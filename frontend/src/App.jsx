@@ -11,7 +11,6 @@ const bodyParts = ["Chest", "Brain", "Abdomen/Pelvis", "Spine", "Neck", "Extremi
 const App = () => {
   const [transcription, setTranscription] = useState("");
   const [findings, setFindings] = useState("");
-  const [impression, setImpression] = useState("");
   const [modality, setModality] = useState("CT");
   const [bodyPart, setBodyPart] = useState("Chest");
   const [loading, setLoading] = useState(false);
@@ -41,7 +40,7 @@ const App = () => {
   const handleGenerateReport = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/generate-report", {
+      const response = await fetch("http://localhost:3000/api/generate-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcription, modality, bodyPart }),
@@ -53,11 +52,9 @@ const App = () => {
 
       const data = await response.json();
       setFindings(data.findings.replace(/\n/g, "\n\n"));
-      setImpression(data.impression);
     } catch (error) {
       console.error("Error during API call:", error);
       setFindings(`Error: ${error.message}`);
-      setImpression("");
     } finally {
       setLoading(false);
     }
@@ -104,11 +101,7 @@ const App = () => {
               <h3 className="text-lg font-medium text-gray-300">Findings:</h3>
               <textarea className="w-full p-4 border rounded-md bg-gray-600 text-white shadow-sm" rows="6" value={findings} readOnly />
             </div>
-            <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-300">Impression:</h3>
-              <textarea className="w-full p-4 border rounded-md bg-gray-600 text-white shadow-sm" rows="3" value={impression} readOnly />
-            </div>
-            <Button onClick={() => navigator.clipboard.writeText(`FINDINGS:\n${findings}\n\nIMPRESSION:\n${impression}`)} className="bg-blue-500 hover:bg-blue-600 text-white w-full">
+            <Button onClick={() => navigator.clipboard.writeText(findings)} className="bg-blue-500 hover:bg-blue-600 text-white w-full">
               <Clipboard /> Copy Report
             </Button>
           </CardContent>

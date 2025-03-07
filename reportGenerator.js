@@ -2,7 +2,7 @@ const fetch = require("node-fetch");
 
 async function generateReport(transcription, modality, bodyPart) {
   if (!transcription || typeof transcription !== "string") {
-    return { findings: "Error: Invalid input.", impression: "" };
+    return { findings: "Error: Invalid input." };
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -33,9 +33,7 @@ async function generateReport(transcription, modality, bodyPart) {
     },
     {
       role: "user",
-      content: `Dictated findings: "${transcription}". Generate a detailed report with the following sections:
-1. **Findings**: Describe all abnormal and normal findings.
-2. **Impression**: Summarize the key findings and their clinical significance.`,
+      content: `Dictated findings: "${transcription}". Generate a detailed report with findings only. Do not include any additional sections or formatting.`,
     },
   ];
 
@@ -56,27 +54,19 @@ async function generateReport(transcription, modality, bodyPart) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenAI API Error:", errorText);
-      return { findings: "AI processing failed. Please try again.", impression: "" };
+      return { findings: "AI processing failed. Please try again." };
     }
 
     const data = await response.json();
     const reply = data.choices[0].message.content.trim();
 
-    // Split findings and impression
-    const findingsSection = reply.includes("**Findings:**")
-      ? reply.split("**Findings:**")[1].split("**Impression:**")[0].trim()
-      : reply;
-    const impressionSection = reply.includes("**Impression:**")
-      ? reply.split("**Impression:**")[1].trim()
-      : "";
-
+    // Return only the findings
     return {
-      findings: findingsSection,
-      impression: impressionSection,
+      findings: reply,
     };
   } catch (error) {
     console.error("Error generating report:", error);
-    return { findings: "Error generating report. Please check your connection.", impression: "" };
+    return { findings: "Error generating report. Please check your connection." };
   }
 }
 

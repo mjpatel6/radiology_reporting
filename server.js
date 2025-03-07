@@ -9,11 +9,22 @@ const { generateReport } = require("./reportGenerator");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Enable CORS for frontend
+app.use(cors({
+  origin: "http://localhost:5173", // Allow requests from your frontend
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("tiny"));
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy" });
+});
+
+// Generate report endpoint
 app.post("/api/generate-report", async (req, res) => {
   try {
     const { transcription, modality, bodyPart } = req.body;
