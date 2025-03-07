@@ -2,122 +2,86 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
+const PORT = process.env.PORT || 3000;
+
+// Function to generate a structured radiology report
+function generateReport(transcription) {
+  if (!transcription || typeof transcription !== "string") {
+    return "Error: Invalid input.";
+  }
+
+  // Convert to lowercase for consistency
+  const inputText = transcription.toLowerCase();
+
+  // Determine modality
+  let modality = "CT";
+  if (inputText.includes("mri")) modality = "MRI";
+  if (inputText.includes("ultrasound") || inputText.includes("us")) modality = "Ultrasound";
+  if (inputText.includes("x-ray") || inputText.includes("xr")) modality = "X-ray";
+
+  // Determine body region
+  let bodyPart = "Abdomen/Pelvis"; // Default
+  if (inputText.includes("chest")) bodyPart = "Chest";
+  if (inputText.includes("brain") || inputText.includes("head")) bodyPart = "Brain";
+  if (inputText.includes("spine")) bodyPart = "Spine";
+  if (inputText.includes("neck")) bodyPart = "Neck";
+  if (inputText.includes("extremity")) bodyPart = "Extremity";
+
+  // Template for different studies
+  const findings = {
+    Chest: {
+      Lungs: inputText.includes("nodule") ? "Pulmonary nodule noted." : "No pulmonary nodule or mass.",
+      Pleura: inputText.includes("effusion") ? "Pleural effusion present." : "No pleural effusion.",
+      Mediastinum: inputText.includes("cardiomegaly") ? "Cardiomegaly noted." : "No significant mediastinal abnormality.",
+      Heart: inputText.includes("enlarged heart") ? "Heart size is enlarged." : "Normal heart size."
+    },
+    AbdomenPelvis: {
+      Liver: inputText.includes("liver lesion") ? "Liver lesion identified." : "No focal hepatic lesion.",
+      Gallbladder: inputText.includes("gallstone") ? "Gallstones present." : "Gallbladder is unremarkable.",
+      Pancreas: inputText.includes("pancreatitis") ? "Findings consistent with pancreatitis." : "Pancreas appears normal."
+    },
+    Brain: {
+      BrainParenchyma: inputText.includes("stroke") ? "Acute infarct identified." : "No acute infarct or hemorrhage.",
+      Ventricles: inputText.includes("hydrocephalus") ? "Ventricular enlargement present." : "Ventricles are normal in size."
+    },
+    Spine: {
+      Vertebrae: inputText.includes("fracture") ? "Vertebral fracture identified." : "No acute vertebral fracture.",
+      Discs: inputText.includes("herniation") ? "Disc herniation present." : "No significant disc herniation."
+    }
+  };
+
+  // Selecting findings based on body part
+  const selectedFindings = findings[bodyPart] || findings.AbdomenPelvis;
+
+  // Construct the structured findings
+  let findingsText = "";
+  for (const [section, text] of Object.entries(selectedFindings)) {
+    findingsText += `${section.toUpperCase()}: ${text}\n`;
+  }
+
+  // Generate the impression
+  let impression = "No acute findings.";
+  if (inputText.includes("nodule")) {
+    impression = "Pulmonary nodule present. Follow-up as clinically indicated.";
+  } else if (inputText.includes("fracture")) {
+    impression = "Vertebral fracture identified. Further evaluation recommended.";
+  }
+
+  // Final report format
+  return `FINDINGS:\n${findingsText}\nIMPRESSION:\n${impression}`;
+}
+
+// API Endpoint
 app.post("/api/generate-report", (req, res) => {
-    const { transcription } = req.body;
-    
-    const { modality, bodyPart, filteredText } = parseTranscription(transcription);
-    const findings = generateFindings(filteredText, bodyPart);
-    const impression = generateImpression(findings);
-
-    const report = `
-FINDINGS:
-
-${findings}
-
-IMPRESSION:
-
-${impression}
-    `.trim();
-
-    res.json({ report });
+  const { transcription } = req.body;
+  const report = generateReport(transcription);
+  res.json({ report });
 });
 
-function parseTranscription(transcription) {
-    const modalities = ["ct", "mri", "us", "xr", "x-ray", "ultrasound"];
-    const bodyParts = ["head", "brain", "chest", "abdomen", "pelvis", "spine", "neck", "extremity", "knee", "shoulder", "hip"];
-
-    let words = transcription.toLowerCase().split(/\s+/);
-    let modality = words.find(word => modalities.includes(word)) || "unspecified";
-    let bodyPart = words.find(word => bodyParts.includes(word)) || "general";
-
-    let filteredText = words.filter(word => !modalities.includes(word) && !bodyParts.includes(word)).join(" ");
-
-    return { modality, bodyPart, filteredText };
-}
-
-function generateFindings(transcription, bodyPart) {
-    let templates = {
-        general: {
-            LUNGS: "No focal consolidation, effusion, or pneumothorax.",
-            PLEURA: "No pleural effusion or thickening.",
-            MEDIASTINUM: "No significant lymphadenopathy.",
-            HEART: "Normal heart size.",
-            AORTA: "No aneurysm or dissection.",
-            ESOPHAGUS: "No esophageal abnormality.",
-            CHEST_WALL: "No suspicious osseous lesions or soft tissue abnormalities."
-        },
-        abdomen: {
-            LIVER: "No focal liver lesion.",
-            GALLBLADDER: "No gallstones or wall thickening.",
-            PANCREAS: "Normal pancreatic contour.",
-            SPLEEN: "Normal splenic size.",
-            KIDNEYS: "No hydronephrosis or mass.",
-            BOWEL: "No bowel obstruction or inflammatory changes.",
-            AORTA: "No aneurysm or dissection."
-        },
-        brain: {
-            PARENCHYMA: "No acute intracranial hemorrhage or infarct.",
-            VENTRICLES: "No hydrocephalus.",
-            CISTERNS: "No abnormal effacement.",
-            SINUSES: "No acute sinus disease."
-        },
-        spine: {
-            ALIGNMENT: "Normal vertebral alignment.",
-            DISC: "No significant disc bulge or herniation.",
-            CORD: "No abnormal signal in spinal cord."
-        }
-    };
-
-    let findings = templates[bodyPart] || templates.general;
-
-    // Modify findings based on the transcription
-    if (transcription.includes("nodule")) {
-        findings.LUNGS = "Small pulmonary nodule noted.";
-    }
-    if (transcription.includes("cardiomegaly")) {
-        findings.HEART = "Cardiomegaly present.";
-    }
-    if (transcription.includes("hiatal hernia")) {
-        findings.ESOPHAGUS = "Small hiatal hernia noted.";
-    }
-    if (transcription.includes("mass")) {
-        findings.BOWEL = "Soft tissue mass identified, further evaluation required.";
-    }
-    if (transcription.includes("stroke")) {
-        findings.PARENCHYMA = "Findings consistent with acute infarct.";
-    }
-    if (transcription.includes("hernia")) {
-        findings.ABDOMEN = "Hernia noted in the abdominal wall.";
-    }
-
-    return Object.entries(findings)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join("\n\n");
-}
-
-function generateImpression(findings) {
-    let impression = [];
-
-    if (findings.includes("nodule")) {
-        impression.push("Pulmonary nodule noted. Follow-up per Fleischner Society guidelines.");
-    }
-    if (findings.includes("Cardiomegaly")) {
-        impression.push("Cardiomegaly. Correlate with echocardiogram.");
-    }
-    if (findings.includes("hiatal hernia")) {
-        impression.push("Small hiatal hernia, incidental finding.");
-    }
-    if (findings.includes("stroke")) {
-        impression.push("Findings consistent with acute infarct. Recommend neurology consultation.");
-    }
-    if (findings.includes("mass")) {
-        impression.push("Abdominal mass identified. Consider further imaging or biopsy.");
-
-    return impression.join("\n\n") || "No acute findings.";
-}
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
